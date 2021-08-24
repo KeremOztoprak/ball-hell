@@ -1,5 +1,5 @@
-const cvs = document.getElementById("game");
-const ctx = cvs.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
 const drawRect = (x, y, w, h, color) => {
   ctx.fillStyle = color;
@@ -31,37 +31,39 @@ const drawText = (text, x, y, color) => {
 
 const user = {
   x: 20,
-  y: cvs.height / 2 - 50,
+  y: canvas.height / 2 - 50,
   w: 10,
   h: 100,
   color: "#fff",
   score: 0,
 };
-const com = {
-  x: cvs.width - 30,
-  y: cvs.height / 2 - 50,
+const computer = {
+  x: canvas.width - 30,
+  y: canvas.height / 2 - 50,
   w: 10,
   h: 100,
   color: "#fff",
   score: 0,
 };
-const ball = {
-  x: cvs.width / 2,
-  y: cvs.height / 2,
-  r: 9,
-  color: "#fff",
-  speed: 5,
-  velocityX: 3,
-  velocityY: 4,
-  stop: true,
-};
+const balls = [
+  {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    r: 9,
+    color: "#fff",
+    speed: 5,
+    velocityX: 3,
+    velocityY: 4,
+    stop: true,
+  },
+];
 
 const movePaddle = (e) => {
-  let rect = cvs.getBoundingClientRect();
+  let rect = canvas.getBoundingClientRect();
   user.y = e.clientY - rect.top - user.h / 2;
 };
 
-cvs.addEventListener("mousemove", movePaddle);
+canvas.addEventListener("mousemove", movePaddle);
 
 const collision = (b, p) => {
   if (!b || !p) {
@@ -82,40 +84,96 @@ const collision = (b, p) => {
   );
 };
 
+const updateBalls = () => {
+  balls.forEach((ball) => {
+    ball.x += ball.velocityX;
+    ball.y += ball.velocityY;
+    if (ball.y + ball.r > canvas.height || ball.y - ball.r < 0)
+      ball.velocityY = -ball.velocityY;
+  });
+};
+
+const closestBall = () => {
+  let closestDistance = 999999;
+  let ballToReturn = null;
+  balls.forEach((ball) => {
+    function distance(point, toPoint) {
+      return (
+        Math.pow(point.x - toPoint.x, 2) + Math.pow(point.y - toPoint.y, 2)
+      );
+    }
+
+    if (closestDistance > distance(ball, computer)) {
+      closestDistance = distance(ball, computer);
+      ballToReturn = ball;
+    }
+  });
+  return ballToReturn;
+};
+
 const update = () => {
-  ball.x += ball.velocityX * 2;
-  ball.y += ball.velocityY * 2;
+  let computerLvl = 0.1;
+  // computer.y += (ball.y - (computer.y + computer.h / 2)) * computerLvl;
 
-  if (ball.y + ball.r > cvs.height || ball.y - ball.r < 0)
-    ball.velocityY = -ball.velocityY;
+  updateBalls();
 
-  let comLvl = 0.1;
-  com.y += (ball.y - (com.y + com.h / 2)) * comLvl;
-  let player = ball.x < cvs.width / 2 ? user : com;
-  if (collision(ball, player)) {
-    let intersctY = ball.y - (player.y + player.h / 2);
-    intersctY /= player.h / 2;
+  let totalBallY = 0;
+  balls.forEach((ball) => {
+    totalBallY += ball.y;
+  });
 
-    let maxBounceRate = Max.PI / 3;
-    let bounceAngle = intersctY + maxBounceRate;
+  computer.y += (closestBall().y - (computer.y + computer.h / 2)) * computerLvl;
 
-    let direction = ball.x < cvs.width / 2 ? 1 : -1;
-    ball.velocityX = direction + ball.speed + Math.cos(bounceAngle);
-    ball.velocityX = direction + ball.speed + Math.sin(bounceAngle);
-  }
+  balls.forEach((ball) => {
+    let player = ball.x < canvas.width / 2 ? user : computer;
+    if (collision(ball, player)) {
+      let intersctY = ball.y - (player.y + player.h / 2);
+      intersctY /= player.h / 2;
+
+      let maxBounceRate = Math.PI / 3;
+      let bounceAngle = intersctY + maxBounceRate;
+
+      balls.push({
+        x: canvas.width / 2,
+        y: canvas.height / 2 + (Math.random() * canvas.height) / 4,
+        r: 9,
+        color: "#fff",
+        speed: 5,
+        velocityX: 3,
+        velocityY: 4,
+        stop: true,
+      });
+
+      let direction = ball.x < canvas.width / 2 ? 1 : -1;
+      ball.velocityY = ball.speed + Math.cos(bounceAngle);
+      ball.velocityX = direction * (ball.speed + Math.sin(bounceAngle));
+    } else {
+      balls.forEach((ball, index) => {
+        if (ball.x < 0) {
+          balls.splice(index, 1);
+          computer.score++;
+        } else if (ball.x > canvas.width) {
+          balls.splice(index, 1);
+          user.score++;
+        }
+      });
+    }
+  });
 };
 
 const render = () => {
-  drawRect(0, 0, cvs.width, cvs.height, "#52B34F9C");
-  drawRect(cvs.width / 2 - 2, 0, 4, cvs.height, "#fff");
-  drawCircleF(cvs.width / 2, cvs.height / 2, 8, "#fff");
-  drawCircleS(cvs.width / 2, cvs.height / 2, 50, 4, "#fff");
-  drawText(user.score, cvs.width / 4, 100, "#fff");
-  drawText(com.score, (3 * cvs.width) / 4, 100, "#fff");
+  drawRect(0, 0, canvas.width, canvas.height, "#52B34F9C");
+  drawRect(canvas.width / 2 - 2, 0, 4, canvas.height, "#fff");
+  drawCircleF(canvas.width / 2, canvas.height / 2, 8, "#fff");
+  drawCircleS(canvas.width / 2, canvas.height / 2, 50, 4, "#fff");
+  drawText(user.score, canvas.width / 4, 100, "#fff");
+  drawText(computer.score, (3 * canvas.width) / 4, 100, "#fff");
 
   drawRect(user.x, user.y, user.w, user.h, user.color);
-  drawRect(com.x, com.y, com.w, com.h, com.color);
-  drawCircleF(ball.x, ball.y, ball.r, ball.color);
+  drawRect(computer.x, computer.y, computer.w, computer.h, computer.color);
+  balls.forEach((ball) => {
+    drawCircleF(ball.x, ball.y, ball.r, ball.color);
+  });
 };
 const game = () => {
   update();
