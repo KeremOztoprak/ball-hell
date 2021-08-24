@@ -111,7 +111,16 @@ const closestBall = () => {
   return ballToReturn;
 };
 
+const havaiFisekGosterVeCanvasiKapat = () => {
+  document.getElementById("pyroContainer").style.display = "block";
+  document.getElementById("game").style.width = "0";
+  document.getElementById("game").style.height = "0";
+};
+
 const update = () => {
+  if (window.keremBitirdi) {
+    return;
+  }
   let computerLvl = 0.1;
   // computer.y += (ball.y - (computer.y + computer.h / 2)) * computerLvl;
 
@@ -152,9 +161,31 @@ const update = () => {
         if (ball.x < 0) {
           balls.splice(index, 1);
           computer.score++;
+          if (user.score > 10) {
+            havaiFisekGosterVeCanvasiKapat();
+            alert("kazandın");
+            window.keremBitirdi = true;
+
+            // location.reload();
+          } else if (computer.score > 10) {
+            havaiFisekGosterVeCanvasiKapat();
+            alert("GG WP BROOO");
+            window.keremBitirdi = true;
+
+            // location.reload();
+          }
         } else if (ball.x > canvas.width) {
           balls.splice(index, 1);
           user.score++;
+          if (user.score > 10) {
+            havaiFisekGosterVeCanvasiKapat();
+            alert("kazandın");
+            window.keremBitirdi = true;
+          } else if (computer.score > 10) {
+            havaiFisekGosterVeCanvasiKapat();
+            alert("GG WP BROOO");
+            window.keremBitirdi = true;
+          }
         }
       });
     }
